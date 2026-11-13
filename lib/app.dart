@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mornye/constants/app_info.dart';
-import 'package:mornye/screens/main_shell.dart';
+import 'package:mornye/my_calls/my_calls_shell.dart';
 import 'package:mornye/screens/setup_screen.dart';
 import 'package:mornye/screens/tutorial_screen.dart';
 import 'package:mornye/screens/whats_new_screen.dart';
@@ -63,7 +63,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
     observers: [AppOrientationObserver()],
     initialLocation: initialLocation,
     routes: [
-      GoRoute(path: '/', builder: (context, state) => const MainShell()),
+      GoRoute(path: '/', builder: (context, state) => const MyCallsShell()),
       GoRoute(path: '/setup', builder: (context, state) => const SetupScreen()),
       GoRoute(
         path: '/tutorial',
@@ -76,7 +76,7 @@ final _routerProvider = Provider<GoRouter>((ref) {
     ],
     // Safety net: if a deep link URL (e.g. Spotify/Deezer) somehow reaches
     // GoRouter, redirect to home instead of showing "Page Not Found".
-    errorBuilder: (context, state) => const MainShell(),
+    errorBuilder: (context, state) => const MyCallsShell(),
   );
 });
 
