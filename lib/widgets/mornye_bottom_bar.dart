@@ -79,6 +79,7 @@ class MornyeBottomBar extends ConsumerStatefulWidget {
     required this.onSelected,
     required this.onHome,
     required this.onSearch,
+    this.searchIndex,
     required this.blurEnabled,
   });
 
@@ -88,6 +89,7 @@ class MornyeBottomBar extends ConsumerStatefulWidget {
   final ValueChanged<int> onSelected;
   final VoidCallback onHome;
   final VoidCallback onSearch;
+  final int? searchIndex;
   final bool blurEnabled;
 
   @override
@@ -161,6 +163,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
     final onSelected = widget.onSelected;
     final onHome = widget.onHome;
     final onSearch = widget.onSearch;
+    final searchIndex = widget.searchIndex ?? destinations.length - 1;
     final blurEnabled = widget.blurEnabled;
     const hasPlayer = false;
     final liquidGlass = ref.watch(mornyeLiquidGlassProvider);
@@ -189,7 +192,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
     );
     final leadingSurface = sideSurface(_leadingSurfaceKey);
     final searchSurface = sideSurface(_searchSurfaceKey);
-    final searchSelected = selectedIndex == destinations.length - 1;
+    final searchSelected = selectedIndex == searchIndex;
     final leadingIndex = searchSelected ? 0 : selectedIndex;
     final scheme = Theme.of(context).colorScheme;
     final inactiveIconColor = scheme.onSurface;
@@ -201,13 +204,13 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
           destinations: destinations,
           selectedIndex: selectedIndex,
           onSelected: (index) =>
-              index == destinations.length - 1 ? onSearch() : onSelected(index),
+              index == searchIndex ? onSearch() : onSelected(index),
           blurEnabled: blurEnabled,
           liquidGlass: liquidGlass,
           contentOpacity: _tabOpacity,
           fold: _controller,
           hiddenIconIndices: hideMovingIcons
-              ? {leadingIndex, destinations.length - 1}
+              ? {leadingIndex, searchIndex}
               : const {},
         ),
       ),
@@ -271,7 +274,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
               required bool leading,
               required Widget surface,
             }) {
-              final index = leading ? leadingIndex : destinations.length - 1;
+              final index = leading ? leadingIndex : searchIndex;
               final origin = fullIconStart(index);
               final offset =
                   ((leading ? origin : constraints.maxWidth - origin) - 26) *

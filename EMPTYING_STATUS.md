@@ -1,9 +1,9 @@
-# Mornye source emptying status
+# Emptying status
 
-This is a copy of the original source tree, not a recreated app. The original folder is unchanged.
+This branch uses the original Mornye source and its original theme and navigation widgets.
 
-Changed: original main entry skips music startup, original shell has blank Home/Library/Search content slots, original Settings list exposes Appearance. Original themes, navigation widgets, transitions and platform source remain.
+Completed: music startup removed; Home, Library and Search content slots empty; appearance settings retained; music player removed from mobile bar and Material artwork theme; theme preview is generic; Mornye Settings is a tab; pages support horizontal swipe on phones.
 
-Incomplete: music services, models, native code and assets are still in this source tree because other original shell components reference them. The desktop player chrome and some appearance options may still reference music. This version has not passed a platform build.
+Remaining: music service, model, native and asset source remains because original UI and settings modules still import parts of it. The project is not yet a fully reusable application core. The Android APK build is the next integration check.
 
-The earlier Mornye-Empty-Shell.zip is an independent prototype and is not this source tree.
+Original local Mornye-main folder remains unchanged.

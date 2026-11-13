@@ -3,40 +3,39 @@ part of 'appearance_settings_page.dart';
 class _ThemePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    if (context.isMornye) {
-      return ExcludeSemantics(
-        child: IgnorePointer(
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  context.l10n.navLibrary,
-                  style: Theme.of(context).textTheme.headlineLarge,
+    final scheme = Theme.of(context).colorScheme;
+    return ExcludeSemantics(
+      child: IgnorePointer(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                context.l10n.navHome,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 16),
+              Container(
+                height: 70,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHigh,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    AppIcon(
-                      Icons.library_music_outlined,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(width: 16),
-                    Text(
-                      context.l10n.appName,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                  ],
+                child: Center(
+                  child: Icon(
+                    Icons.dashboard_outlined,
+                    color: scheme.primary,
+                    size: 30,
+                  ),
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 16),
+              if (context.isMornye)
                 MornyeTabBar(
                   destinations: [
                     NavigationDestination(
@@ -44,187 +43,44 @@ class _ThemePreviewCard extends StatelessWidget {
                       label: context.l10n.navHome,
                     ),
                     NavigationDestination(
-                      icon: const AppIcon(Icons.library_music_outlined),
+                      icon: const AppIcon(Icons.dashboard_outlined),
                       label: context.l10n.navLibrary,
+                    ),
+                    NavigationDestination(
+                      icon: const AppIcon(Icons.search),
+                      label: context.l10n.mornyeSearch,
                     ),
                     NavigationDestination(
                       icon: const AppIcon(Icons.settings_outlined),
                       label: context.l10n.navSettings,
                     ),
                   ],
-                  selectedIndex: 1,
+                  selectedIndex: 0,
                   onSelected: (_) {},
                   blurEnabled: false,
+                )
+              else
+                NavigationBar(
+                  selectedIndex: 0,
+                  onDestinationSelected: (_) {},
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.home_outlined),
+                      label: context.l10n.navHome,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.dashboard_outlined),
+                      label: context.l10n.navLibrary,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.settings_outlined),
+                      label: context.l10n.navSettings,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+            ],
           ),
         ),
-      );
-    }
-
-    return RepaintBoundary(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final cardWidth = constraints.maxWidth;
-          final previewHeight = (cardWidth * 0.56).clamp(170.0, 220.0);
-          final innerWidth = (cardWidth - 48).clamp(220.0, 320.0);
-          final innerHeight = (previewHeight * 0.70).clamp(120.0, 160.0);
-          final innerPadding = (innerHeight * 0.11).clamp(12.0, 18.0);
-          final artworkSize = (innerHeight - (innerPadding * 2)).clamp(
-            80.0,
-            120.0,
-          );
-
-          return Container(
-            height: previewHeight,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(28),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              children: [
-                Positioned(
-                  top: -(previewHeight * 0.25),
-                  right: -(previewHeight * 0.25),
-                  child: Container(
-                    width: previewHeight,
-                    height: previewHeight,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colorScheme.primaryContainer.withValues(
-                        alpha: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: -(previewHeight * 0.15),
-                  left: -(previewHeight * 0.15),
-                  child: Container(
-                    width: previewHeight * 0.75,
-                    height: previewHeight * 0.75,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: colorScheme.tertiaryContainer.withValues(
-                        alpha: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-                Center(
-                  child: Container(
-                    width: innerWidth,
-                    height: innerHeight,
-                    padding: EdgeInsets.all(innerPadding),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 12,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: artworkSize,
-                          height: artworkSize,
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: AppIcon(
-                            Icons.music_note,
-                            color: colorScheme.onPrimary,
-                            size: artworkSize * 0.44,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                width: double.infinity,
-                                height: 14,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.onSurface,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Container(
-                                width: 80,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-                              Row(
-                                children: [
-                                  AppIcon(
-                                    Icons.skip_previous,
-                                    size: 24,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  AppIcon(
-                                    Icons.play_circle_fill,
-                                    size: 32,
-                                    color: colorScheme.primary,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  AppIcon(
-                                    Icons.skip_next,
-                                    size: 24,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                PositionedDirectional(
-                  bottom: 12,
-                  end: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.6),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      isDark
-                          ? context.l10n.appearanceThemeDark
-                          : context.l10n.appearanceThemeLight,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }

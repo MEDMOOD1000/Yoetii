@@ -12,33 +12,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mornye/l10n/l10n.dart';
 import 'package:mornye/services/saf_migration_prompt_store.dart';
-import 'package:mornye/providers/download_queue_provider.dart';
 import 'package:mornye/providers/extension_provider.dart';
 import 'package:mornye/providers/music_player_provider.dart';
-import 'package:mornye/providers/network_upload_provider.dart';
 import 'package:mornye/providers/settings_provider.dart';
-import 'package:mornye/providers/playback_notification_provider.dart';
-import 'package:mornye/providers/repo_provider.dart';
 import 'package:mornye/providers/runtime_profile_provider.dart';
 import 'package:mornye/providers/track_provider.dart';
 import 'package:mornye/providers/user_profile_provider.dart';
-import 'package:mornye/providers/preview_player_provider.dart';
-import 'package:mornye/screens/home_tab.dart';
 import 'package:mornye/screens/library_directory_screen.dart';
 import 'package:mornye/screens/library_tracks_folder_screen.dart';
 import 'package:mornye/screens/mornye_library_screen.dart';
-import 'package:mornye/screens/repo_tab.dart';
 import 'package:mornye/screens/queue_tab.dart';
 import 'package:mornye/screens/settings/profile_settings_page.dart';
 import 'package:mornye/screens/settings/settings_tab.dart';
-import 'package:mornye/screens/whats_new_screen.dart';
 import 'package:mornye/services/platform_bridge.dart';
 import 'package:mornye/services/shell_navigation_service.dart';
 import 'package:mornye/services/share_intent_service.dart';
 import 'package:mornye/services/music_playback_deck.dart';
-import 'package:mornye/services/listening_statistics.dart';
-import 'package:mornye/services/discord_presence_service.dart';
-import 'package:mornye/services/notification_service.dart';
 import 'package:mornye/services/app_remote_config_service.dart';
 import 'package:mornye/services/update_checker.dart';
 import 'package:mornye/widgets/app_announcement_dialog.dart';
@@ -48,7 +37,6 @@ import 'package:mornye/widgets/update_dialog.dart';
 import 'package:mornye/widgets/animation_utils.dart';
 import 'package:mornye/widgets/nav_destination_icons.dart';
 import 'package:mornye/widgets/settings_group.dart';
-import 'package:mornye/widgets/mini_player.dart';
 import 'package:mornye/widgets/tv_shell.dart';
 import 'package:mornye/widgets/lazy_tab_view.dart';
 import 'package:mornye/widgets/link/link_actions.dart';
@@ -58,7 +46,6 @@ import 'package:mornye/widgets/app_icon.dart';
 import 'package:mornye/widgets/app_loading_indicator.dart';
 import 'package:mornye/widgets/mornye_chrome.dart';
 import 'package:mornye/theme/mornye_theme.dart';
-import 'package:mornye/theme/player_artwork_theme.dart';
 import 'package:mornye/widgets/selection_bottom_bar.dart';
 import 'package:mornye/widgets/desktop/desktop_commands.dart';
 import 'package:mornye/widgets/desktop/desktop_inspector.dart';
@@ -110,12 +97,7 @@ int? shellIndexOfTab(
   // Material searches from Home.
   ShellTab.search => mornye ? (showStore ? 3 : 2) : 0,
   // Mornye phones open Settings as a page, not a destination.
-  ShellTab.settings =>
-    !mornye
-        ? (showStore ? 3 : 2)
-        : desktop
-        ? (showStore ? 4 : 3)
-        : null,
+  ShellTab.settings => mornye ? (showStore ? 4 : 3) : (showStore ? 3 : 2),
 };
 
 class MainShell extends ConsumerStatefulWidget {
@@ -183,9 +165,7 @@ class _MainShellState extends ConsumerState<MainShell>
     final previous = _indexStyleMornye;
     _indexStyleMornye = mornye;
     if (previous == null || previous == mornye) return;
-    final showStore = ref.read(
-      settingsProvider.select((s) => s.showExtensionStore),
-    );
+    final showStore = false;
     final tab = shellTabAt(
       _currentIndex,
       mornye: previous,
@@ -225,18 +205,10 @@ class _MainShellState extends ConsumerState<MainShell>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     usbAudioStatus.addListener(_onUsbAudioStatusChanged);
-    _homePreviewStopObserver = _PreviewStopNavigatorObserver(
-      () => ref.read(previewPlayerProvider.notifier).stop(),
-    );
-    _libraryPreviewStopObserver = _PreviewStopNavigatorObserver(
-      () => ref.read(previewPlayerProvider.notifier).stop(),
-    );
-    _repoPreviewStopObserver = _PreviewStopNavigatorObserver(
-      () => ref.read(previewPlayerProvider.notifier).stop(),
-    );
-    _searchPreviewStopObserver = _PreviewStopNavigatorObserver(
-      () => ref.read(previewPlayerProvider.notifier).stop(),
-    );
+    _homePreviewStopObserver = _PreviewStopNavigatorObserver(() {});
+    _libraryPreviewStopObserver = _PreviewStopNavigatorObserver(() {});
+    _repoPreviewStopObserver = _PreviewStopNavigatorObserver(() {});
+    _searchPreviewStopObserver = _PreviewStopNavigatorObserver(() {});
     _pageController = PageController(initialPage: _currentIndex);
     _tabJumpTransitionController = AnimationController(
       vsync: this,
@@ -294,10 +266,6 @@ class _MainShellState extends ConsumerState<MainShell>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed && _initialSafRepairComplete) {
       unawaited(_repairSafAccessIfNeeded());
-    } else if (state == AppLifecycleState.paused) {
-      unawaited(
-        ref.read(musicPlayerRuntimeProvider).handler?.persistCurrentSession(),
-      );
     }
   }
 
@@ -406,22 +374,17 @@ class _MainShellState extends ConsumerState<MainShell>
   }
 
   void _resetHomeToMain() {
-    ref.read(previewPlayerProvider.notifier).stop();
-    final showStore = ref.read(
-      settingsProvider.select((s) => s.showExtensionStore),
-    );
+    final showStore = false;
     final homeNavigator = _navigatorForTab(0, showStore);
     homeNavigator?.popUntil((route) => route.isFirst);
     // Unfocus BEFORE clear so _onTrackStateChanged can properly
     // clear _urlController (it checks !_searchFocusNode.hasFocus)
     FocusManager.instance.primaryFocus?.unfocus();
-    if (!context.isMornye) ref.read(trackProvider.notifier).clear();
   }
 
   /// Desktop and TV show Settings after Search in the content pane.
   /// Phones and tablets open it as a page instead.
-  bool get _mornyeSettingsTab =>
-      context.isMornye && (isDesktopPlatform || isAndroidTv);
+  bool get _mornyeSettingsTab => context.isMornye;
 
   int _settingsIndex(bool showStore) =>
       context.isMornye ? (showStore ? 4 : 3) : (showStore ? 3 : 2);
@@ -433,9 +396,7 @@ class _MainShellState extends ConsumerState<MainShell>
       unawaited(_openProfileSettings());
       return;
     }
-    final showStore = ref.read(
-      settingsProvider.select((s) => s.showExtensionStore),
-    );
+    final showStore = false;
     final index = switch (tab) {
       ShellTab.home => 0,
       ShellTab.search => context.isMornye ? (showStore ? 3 : 2) : 0,
@@ -452,7 +413,7 @@ class _MainShellState extends ConsumerState<MainShell>
     if (_settingsPageOpen) return;
     _settingsPageOpen = true;
     FocusManager.instance.primaryFocus?.unfocus();
-    ref.read(previewPlayerProvider.notifier).stop();
+
     try {
       await Navigator.of(context).push(
         slidePageRoute<void>(
@@ -465,9 +426,7 @@ class _MainShellState extends ConsumerState<MainShell>
   }
 
   void _onNavTap(int index, {bool resetHome = true}) {
-    final showStore = ref.read(
-      settingsProvider.select((s) => s.showExtensionStore),
-    );
+    final showStore = false;
     _mornyeChrome.expand();
     if (index == 0 && resetHome && (context.isMornye || _currentIndex == 0)) {
       _resetHomeToMain();
@@ -482,7 +441,7 @@ class _MainShellState extends ConsumerState<MainShell>
       HapticFeedback.selectionClick();
       // Stop any preview snippet when leaving the current tab. (_onPageChanged
       // cannot do this because _currentIndex is already updated below.)
-      ref.read(previewPlayerProvider.notifier).stop();
+
       setState(() => _currentIndex = index);
       ShellNavigationService.syncState(
         currentTabIndex: _currentIndex,
@@ -493,9 +452,7 @@ class _MainShellState extends ConsumerState<MainShell>
       // Jump directly when skipping intermediate tabs to avoid
       // sliding through them. For those jumps, keep a short fade-in
       // so the transition still feels intentional.
-      if (context.isMornye || isAndroidTv) {
-        // The glass pill owns the tab transition. Sliding/fading the whole
-        // page at the same time continuously invalidates its live backdrop.
+      if (isAndroidTv) {
         _tabJumpTransitionController.value = 1;
       } else if (isNonAdjacentJump) {
         _pageController.jumpToPage(index);
@@ -513,11 +470,8 @@ class _MainShellState extends ConsumerState<MainShell>
   void _onPageChanged(int index) {
     _mornyeChrome.expand();
     if (_currentIndex != index) {
-      ref.read(previewPlayerProvider.notifier).stop();
       setState(() => _currentIndex = index);
-      final showStore = ref.read(
-        settingsProvider.select((s) => s.showExtensionStore),
-      );
+      final showStore = false;
       ShellNavigationService.syncState(
         currentTabIndex: _currentIndex,
         showRepoTab: showStore,
@@ -556,9 +510,7 @@ class _MainShellState extends ConsumerState<MainShell>
       return;
     }
 
-    final showStore = ref.read(
-      settingsProvider.select((s) => s.showExtensionStore),
-    );
+    final showStore = false;
     final currentNavigator = _navigatorForTab(_currentIndex, showStore);
     final handledByCurrentNavigator =
         await currentNavigator?.maybePop() ?? false;
@@ -578,7 +530,7 @@ class _MainShellState extends ConsumerState<MainShell>
         !trackState.isLoading &&
         (trackState.hasSearchText || trackState.hasContent)) {
       FocusManager.instance.primaryFocus?.unfocus();
-      ref.read(previewPlayerProvider.notifier).stop();
+
       ref.read(trackProvider.notifier).clear();
       _lastBackPress = null;
       return;
@@ -597,7 +549,7 @@ class _MainShellState extends ConsumerState<MainShell>
       // Unfocus BEFORE clear so _onTrackStateChanged can properly
       // clear _urlController (it checks !_searchFocusNode.hasFocus)
       FocusManager.instance.primaryFocus?.unfocus();
-      ref.read(previewPlayerProvider.notifier).stop();
+
       ref.read(trackProvider.notifier).clear();
       _lastBackPress = null;
       return;
@@ -941,7 +893,7 @@ class _MainShellState extends ConsumerState<MainShell>
 
     final pageView = KeyedSubtree(
       key: _pageViewKey,
-      child: context.isMornye || isAndroidTv
+      child: isAndroidTv
           ? LazyTabView(
               index: selectedDestination,
               preloadKeys: isAndroidTv
@@ -955,25 +907,19 @@ class _MainShellState extends ConsumerState<MainShell>
                   ),
               ],
             )
-          : FadeTransition(
-              opacity: _tabJumpOpacity,
-              child: ScaleTransition(
-                scale: _tabJumpScale,
-                child: PageView.builder(
-                  controller: _pageController,
-                  itemCount: tabs.length,
-                  onPageChanged: _onPageChanged,
-                  physics: const NeverScrollableScrollPhysics(),
-                  // TickerMode mutes animations and lets visibility-aware widgets
-                  // (e.g. MotionHeaderBanner) pause when their tab is hidden;
-                  // kept-alive pages otherwise keep running offscreen.
-                  itemBuilder: (context, index) => _KeepAliveTabPage(
-                    key: ValueKey('page-$index'),
-                    child: TickerMode(
-                      enabled: index == _currentIndex,
-                      child: observeScroll(tabs[index], index),
-                    ),
-                  ),
+          : PageView.builder(
+              controller: _pageController,
+              itemCount: tabs.length,
+              onPageChanged: _onPageChanged,
+              physics: const PageScrollPhysics(),
+              // TickerMode mutes animations and lets visibility-aware widgets
+              // (e.g. MotionHeaderBanner) pause when their tab is hidden;
+              // kept-alive pages otherwise keep running offscreen.
+              itemBuilder: (context, index) => _KeepAliveTabPage(
+                key: ValueKey('page-$index'),
+                child: TickerMode(
+                  enabled: index == _currentIndex,
+                  child: observeScroll(tabs[index], index),
                 ),
               ),
             ),
@@ -1151,7 +1097,7 @@ class _MainShellState extends ConsumerState<MainShell>
           icon: const Icon(CupertinoIcons.search),
           label: l10n.mornyeSearch,
         ),
-      if (context.isMornye && isAndroidTv)
+      if (context.isMornye)
         NavigationDestination(
           icon: const Icon(CupertinoIcons.gear_alt),
           label: l10n.navSettings,
@@ -1269,6 +1215,7 @@ class _MainShellState extends ConsumerState<MainShell>
                                   collapsed &&
                                   MediaQuery.viewInsetsOf(context).bottom == 0,
                               destinations: destinations,
+                              searchIndex: destinations.length - 2,
                               selectedIndex: selectedDestination,
                               onSelected: _onNavTap,
                               onHome: () => _onNavTap(0),
@@ -1286,54 +1233,44 @@ class _MainShellState extends ConsumerState<MainShell>
           // takes the playing track's artwork scheme too; with nothing
           // playing both keep the app scheme. Only this scope listens
           // to the track, so a cover change does not rebuild the shell.
-          return Consumer(
-            builder: (context, ref, child) => PlayerArtworkTheme(
-              artUri: ref.watch(
-                currentMediaItemProvider.select(
-                  (item) => item.value?.artUri?.toString(),
+          return Builder(
+            builder: (context) {
+              final bottomBar = Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox.shrink(),
+                  // The bar's container fill separates it; no divider,
+                  // so the mini player and the bar read as one surface.
+                  if (!useNavigationRail)
+                    ExpressiveNavigationBar(
+                      selectedIndex: _currentIndex.clamp(0, maxIndex),
+                      onDestinationSelected: _onNavTap,
+                      isTablet: isTablet,
+                      backgroundColor: settingsGroupColor(
+                        context,
+                      ).withValues(alpha: 0.72),
+                      destinations: destinations,
+                    ),
+                ],
+              );
+              // The backdrop blur re-filters everything scrolling
+              // underneath on every frame; low-end devices get an
+              // opaque base instead unless the user forces blur on in
+              // appearance settings.
+              if (!blurEnabled) {
+                return ColoredBox(
+                  color: settingsGroupColor(context),
+                  child: bottomBar,
+                );
+              }
+              return ClipRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  blendMode: BlendMode.src,
+                  child: bottomBar,
                 ),
-              ),
-              child: child!,
-            ),
-            child: Builder(
-              builder: (context) {
-                final bottomBar = Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox.shrink(),
-                    // The bar's container fill separates it; no divider,
-                    // so the mini player and the bar read as one surface.
-                    if (!useNavigationRail)
-                      ExpressiveNavigationBar(
-                        selectedIndex: _currentIndex.clamp(0, maxIndex),
-                        onDestinationSelected: _onNavTap,
-                        isTablet: isTablet,
-                        backgroundColor: settingsGroupColor(
-                          context,
-                        ).withValues(alpha: 0.72),
-                        destinations: destinations,
-                      ),
-                  ],
-                );
-                // The backdrop blur re-filters everything scrolling
-                // underneath on every frame; low-end devices get an
-                // opaque base instead unless the user forces blur on in
-                // appearance settings.
-                if (!blurEnabled) {
-                  return ColoredBox(
-                    color: settingsGroupColor(context),
-                    child: bottomBar,
-                  );
-                }
-                return ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    blendMode: BlendMode.src,
-                    child: bottomBar,
-                  ),
-                );
-              },
-            ),
+              );
+            },
           );
         },
       ),
