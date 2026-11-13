@@ -1,9 +1,5 @@
 # Emptying status
 
-This branch uses the original Mornye source and its original theme and navigation widgets.
+Complete for the reusable UI base: original theme and navigation widgets retained; music player, library, downloads, Rust backend, native media integrations, media settings and translation strings removed from the active app and source tree. Appearance preferences migrate from the prior stored settings on first launch.
 
-Completed: music startup removed; Home, Library and Search content slots empty; appearance settings retained; music player removed from mobile bar and Material artwork theme; theme preview is generic; Mornye Settings is a tab; pages support horizontal swipe on phones.
-
-Remaining: music service, model, native and asset source remains because original UI and settings modules still import parts of it. The project is not yet a fully reusable application core. The Android APK build is the next integration check.
-
-Original local Mornye-main folder remains unchanged.
+Home, Workspace and Search are intentionally empty. Appearance settings remain available in both themes. The Android APK build is the remaining device integration check.

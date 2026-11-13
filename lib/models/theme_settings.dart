@@ -12,25 +12,6 @@ const String kMornyeAccentMovedToBlueKey = 'mornye_accent_moved_to_blue';
 const String kUseSystemFontKey = 'use_system_font';
 const String kCustomFontIdKey = 'custom_font_id';
 const String kCustomFontNameKey = 'custom_font_name';
-const String kLyricsTextScaleKey = 'lyrics_text_scale';
-
-double normalizeLyricsTextScale(num? value) =>
-    value != null && value.isFinite ? value.toDouble().clamp(0.8, 1.4) : 1.0;
-const String kLyricsBlurKey = 'lyrics_blur';
-
-/// How strongly Mornye blurs the lyric lines around the current one: 0 turns
-/// it off, 1 is the default.
-double normalizeLyricsBlur(num? value) =>
-    value != null && value.isFinite ? value.toDouble().clamp(0.0, 1.5) : 1.0;
-const String kLyricsOffsetKey = 'lyrics_offset_ms';
-const int kMaxLyricsOffsetMs = 2000;
-
-/// How much later synced lyrics follow playback, in milliseconds, so they
-/// match audio that reaches the ears late (such as over Bluetooth). Negative
-/// values show them earlier.
-int normalizeLyricsOffsetMs(num? value) => value != null && value.isFinite
-    ? value.round().clamp(-kMaxLyricsOffsetMs, kMaxLyricsOffsetMs)
-    : 0;
 const String kMornyeGlassClarityKey = 'mornye_glass_clarity';
 const String kMornyeGlassOutlinesKey = 'mornye_glass_outlines';
 const double kDefaultMornyeGlassClarity = 0.75;
@@ -73,9 +54,6 @@ class ThemeSettings {
   final bool useSystemFont;
   final String customFontId;
   final String customFontName;
-  final double lyricsTextScale;
-  final double lyricsBlur;
-  final int lyricsOffsetMs;
   final double mornyeGlassClarity;
   final bool mornyeGlassOutlines;
 
@@ -89,9 +67,6 @@ class ThemeSettings {
     this.useSystemFont = false,
     this.customFontId = '',
     this.customFontName = '',
-    this.lyricsTextScale = 1,
-    this.lyricsBlur = 1,
-    this.lyricsOffsetMs = 0,
     this.mornyeGlassClarity = kDefaultMornyeGlassClarity,
     this.mornyeGlassOutlines = true,
   });
@@ -108,9 +83,6 @@ class ThemeSettings {
     bool? useSystemFont,
     String? customFontId,
     String? customFontName,
-    double? lyricsTextScale,
-    double? lyricsBlur,
-    int? lyricsOffsetMs,
     double? mornyeGlassClarity,
     bool? mornyeGlassOutlines,
   }) {
@@ -124,13 +96,6 @@ class ThemeSettings {
       useSystemFont: useSystemFont ?? this.useSystemFont,
       customFontId: customFontId ?? this.customFontId,
       customFontName: customFontName ?? this.customFontName,
-      lyricsTextScale: normalizeLyricsTextScale(
-        lyricsTextScale ?? this.lyricsTextScale,
-      ),
-      lyricsBlur: normalizeLyricsBlur(lyricsBlur ?? this.lyricsBlur),
-      lyricsOffsetMs: normalizeLyricsOffsetMs(
-        lyricsOffsetMs ?? this.lyricsOffsetMs,
-      ),
       mornyeGlassClarity: normalizeMornyeGlassClarity(
         mornyeGlassClarity ?? this.mornyeGlassClarity,
       ),
@@ -148,9 +113,6 @@ class ThemeSettings {
     kUseSystemFontKey: useSystemFont,
     kCustomFontIdKey: customFontId,
     kCustomFontNameKey: customFontName,
-    kLyricsTextScaleKey: lyricsTextScale,
-    kLyricsBlurKey: lyricsBlur,
-    kLyricsOffsetKey: lyricsOffsetMs,
     kMornyeGlassClarityKey: mornyeGlassClarity,
     kMornyeGlassOutlinesKey: mornyeGlassOutlines,
   };
@@ -166,11 +128,6 @@ class ThemeSettings {
       useSystemFont: json[kUseSystemFontKey] as bool? ?? false,
       customFontId: json[kCustomFontIdKey] as String? ?? '',
       customFontName: json[kCustomFontNameKey] as String? ?? '',
-      lyricsTextScale: normalizeLyricsTextScale(
-        json[kLyricsTextScaleKey] as num?,
-      ),
-      lyricsBlur: normalizeLyricsBlur(json[kLyricsBlurKey] as num?),
-      lyricsOffsetMs: normalizeLyricsOffsetMs(json[kLyricsOffsetKey] as num?),
       mornyeGlassClarity: normalizeMornyeGlassClarity(
         json[kMornyeGlassClarityKey] as num?,
       ),
@@ -191,9 +148,6 @@ class ThemeSettings {
         other.useSystemFont == useSystemFont &&
         other.customFontId == customFontId &&
         other.customFontName == customFontName &&
-        other.lyricsTextScale == lyricsTextScale &&
-        other.lyricsBlur == lyricsBlur &&
-        other.lyricsOffsetMs == lyricsOffsetMs &&
         other.mornyeGlassClarity == mornyeGlassClarity &&
         other.mornyeGlassOutlines == mornyeGlassOutlines;
   }
@@ -209,9 +163,6 @@ class ThemeSettings {
       useSystemFont.hashCode ^
       customFontId.hashCode ^
       customFontName.hashCode ^
-      lyricsTextScale.hashCode ^
-      lyricsBlur.hashCode ^
-      lyricsOffsetMs.hashCode ^
       mornyeGlassClarity.hashCode ^
       mornyeGlassOutlines.hashCode;
 }
