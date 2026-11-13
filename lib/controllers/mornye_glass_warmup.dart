@@ -8,12 +8,14 @@ import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:mornye/providers/runtime_profile_provider.dart';
 import 'package:mornye/theme/mornye_theme.dart';
 import 'package:mornye/widgets/mornye_chrome.dart';
+import 'package:mornye/utils/logger.dart';
 
 /// Prepares the actual backdrop pipeline, not just the fragment asset. The
 /// detached scene is rasterized once and discarded without presenting a frame.
 class MornyeGlassWarmup {
   static Future<void>? _pending;
   static bool _ready = false;
+  static final _log = AppLogger('MornyeGlass');
 
   @visibleForTesting
   static bool get isReady => _ready;
@@ -22,7 +24,7 @@ class MornyeGlassWarmup {
     if (!ui.ImageFilter.isShaderFilterSupported) return Future<void>.value();
     return _pending ??= _prepare(view).catchError((Object error) {
       // Preparation is optional; keep the package's existing lazy fallback.
-      debugPrint('Glass preparation failed: $error');
+      _log.w('Glass preparation failed: $error');
     });
   }
 
@@ -98,7 +100,7 @@ Future<void> _rasterize(ui.FlutterView view) async {
                   Padding(
                     padding: EdgeInsets.all(12),
                     child: MornyeGlassPanel.overlay(
-                      child: Center(child: Text('Workspace')),
+                      child: Center(child: Text('Download')),
                     ),
                   ),
                 ],

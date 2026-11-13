@@ -165,6 +165,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
     final onSearch = widget.onSearch;
     final searchIndex = widget.searchIndex ?? destinations.length - 1;
     final blurEnabled = widget.blurEnabled;
+    const hasPlayer = false;
     final liquidGlass = ref.watch(mornyeLiquidGlassProvider);
     // Animated glass tabs already reserve 8px above their visible capsule.
     final glassTabs = MornyeTabBar.usesLiquidGlass(
@@ -175,6 +176,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
         mornyeGlassContrastBlockedProvider(MediaQuery.highContrastOf(context)),
       ),
     );
+    final tabGap = glassTabs ? 0.0 : 8.0;
     // These contents do not depend on animation progress. Retain their widget
     // instances so folding only updates geometry and foreground opacity. A
     // backdrop inside a fading layer loses access to the page behind the bar.
@@ -194,6 +196,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
     final leadingIndex = searchSelected ? 0 : selectedIndex;
     final scheme = Theme.of(context).colorScheme;
     final inactiveIconColor = scheme.onSurface;
+    const player = SizedBox.shrink();
     Widget tabs({required bool hideMovingIcons}) => TickerMode(
       enabled: !collapsed,
       child: RepaintBoundary(
@@ -344,6 +347,9 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
               );
             }
 
+            // Only non-overlapping surfaces share a backdrop: the player, the
+            // tabs and, at rest, the side capsules. Frosted capsules stay out
+            // of the blur group, since they cross the tab bar while folding.
             return LiquidGlassBatch(
               child: Stack(
                 clipBehavior: Clip.none,
@@ -351,6 +357,8 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
                   BackdropGroup(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
+                      // Laid out top to bottom, but painted bottom first: the
+                      // player settles in front of the shrinking tab bar.
                       verticalDirection: VerticalDirection.up,
                       children: [
                         Offstage(
@@ -371,6 +379,33 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
                             ),
                           ),
                         ),
+                        if (hasPlayer || amount > 0)
+                          Align(
+                            alignment: Alignment.bottomCenter,
+                            // With no track, introducing the row at full height would
+                            // make the bar jump taller on the first animation frame.
+                            heightFactor: hasPlayer ? 1 : amount,
+                            child: Padding(
+                              padding: EdgeInsets.only(
+                                bottom: hasPlayer
+                                    ? tabGap + (8 - tabGap) * amount
+                                    : 8,
+                              ),
+                              child: Row(
+                                children: [
+                                  SizedBox(
+                                    width: 60 * amount,
+                                    height: hasPlayer ? 48 + 4 * amount : 52,
+                                  ),
+                                  Expanded(child: player),
+                                  SizedBox(
+                                    width: 60 * amount,
+                                    height: hasPlayer ? 48 + 4 * amount : 52,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
