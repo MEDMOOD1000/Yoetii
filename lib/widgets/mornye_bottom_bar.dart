@@ -5,10 +5,8 @@ import 'package:flutter/physics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart';
 import 'package:mornye/l10n/l10n.dart';
-import 'package:mornye/providers/music_player_provider.dart';
 import 'package:mornye/providers/runtime_profile_provider.dart';
 import 'package:mornye/theme/mornye_theme.dart';
-import 'package:mornye/widgets/mini_player.dart';
 import 'package:mornye/widgets/mornye_chrome.dart';
 
 /// Deliberate vertical drags minimize the chrome until the page returns to its
@@ -164,11 +162,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
     final onHome = widget.onHome;
     final onSearch = widget.onSearch;
     final blurEnabled = widget.blurEnabled;
-    final hasPlayer =
-        ref.watch(playerUiEnabledProvider) &&
-        ref.watch(
-          currentMediaItemProvider.select((item) => item.value != null),
-        );
+    const hasPlayer = false;
     final liquidGlass = ref.watch(mornyeLiquidGlassProvider);
     // Animated glass tabs already reserve 8px above their visible capsule.
     final glassTabs = MornyeTabBar.usesLiquidGlass(
@@ -199,7 +193,7 @@ class _MornyeBottomBarState extends ConsumerState<MornyeBottomBar>
     final leadingIndex = searchSelected ? 0 : selectedIndex;
     final scheme = Theme.of(context).colorScheme;
     final inactiveIconColor = scheme.onSurface;
-    final player = MiniPlayer(compact: collapsed, bottomPadding: 0);
+    const player = SizedBox.shrink();
     Widget tabs({required bool hideMovingIcons}) => TickerMode(
       enabled: !collapsed,
       child: RepaintBoundary(
