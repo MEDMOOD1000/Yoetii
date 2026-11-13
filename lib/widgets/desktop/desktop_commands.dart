@@ -263,7 +263,6 @@ List<ShellTab> desktopDestinationTabs({
   ShellTab.home,
   ShellTab.library,
   if (showStore) ShellTab.repository,
-  if (mornye) ShellTab.search,
   ShellTab.settings,
 ];
 

@@ -1,4 +1,7 @@
+import 'package:mornye/planner/yoeti_settings_tab.dart';
 import 'package:mornye/screens/empty_content.dart';
+import 'package:mornye/planner/today_plan_tab.dart';
+import 'package:mornye/planner/next_days_tab.dart';
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' show ImageFilter;
@@ -78,7 +81,6 @@ ShellTab shellTabAt(
   if (index == 0) return ShellTab.home;
   if (index == 1) return ShellTab.library;
   if (showStore && index == 2) return ShellTab.repository;
-  if (mornye && index == (showStore ? 3 : 2)) return ShellTab.search;
   return ShellTab.settings;
 }
 
@@ -95,9 +97,9 @@ int? shellIndexOfTab(
   ShellTab.library => 1,
   ShellTab.repository => showStore ? 2 : null,
   // Material searches from Home.
-  ShellTab.search => mornye ? (showStore ? 3 : 2) : 0,
+  ShellTab.search => 0,
   // Mornye phones open Settings as a page, not a destination.
-  ShellTab.settings => mornye ? (showStore ? 4 : 3) : (showStore ? 3 : 2),
+  ShellTab.settings => showStore ? 3 : 2,
 };
 
 class MainShell extends ConsumerStatefulWidget {
@@ -386,8 +388,7 @@ class _MainShellState extends ConsumerState<MainShell>
   /// Phones and tablets open it as a page instead.
   bool get _mornyeSettingsTab => context.isMornye;
 
-  int _settingsIndex(bool showStore) =>
-      context.isMornye ? (showStore ? 4 : 3) : (showStore ? 3 : 2);
+  int _settingsIndex(bool showStore) => showStore ? 3 : 2;
 
   void _onShellTabRequested(ShellTab tab) {
     // Picking a destination returns from Now Playing to the content pane.
@@ -399,7 +400,7 @@ class _MainShellState extends ConsumerState<MainShell>
     final showStore = false;
     final index = switch (tab) {
       ShellTab.home => 0,
-      ShellTab.search => context.isMornye ? (showStore ? 3 : 2) : 0,
+      ShellTab.search => 0,
       ShellTab.library => 1,
       ShellTab.repository => showStore ? 2 : null,
       ShellTab.settings => _settingsIndex(showStore),
@@ -446,7 +447,7 @@ class _MainShellState extends ConsumerState<MainShell>
       ShellNavigationService.syncState(
         currentTabIndex: _currentIndex,
         showRepoTab: showStore,
-        showSearchTab: context.isMornye,
+        showSearchTab: false,
       );
       if (!isAndroidTv) FocusManager.instance.primaryFocus?.unfocus();
       // Jump directly when skipping intermediate tabs to avoid
@@ -475,7 +476,7 @@ class _MainShellState extends ConsumerState<MainShell>
       ShellNavigationService.syncState(
         currentTabIndex: _currentIndex,
         showRepoTab: showStore,
-        showSearchTab: context.isMornye,
+        showSearchTab: false,
       );
       FocusManager.instance.primaryFocus?.unfocus();
     }
@@ -522,8 +523,7 @@ class _MainShellState extends ConsumerState<MainShell>
     if (!mounted) return;
 
     final trackState = ref.read(trackProvider);
-    final isSearchTab =
-        _currentIndex == (context.isMornye ? (showStore ? 3 : 2) : 0);
+    final isSearchTab = false;
 
     if (isSearchTab &&
         trackState.isShowingRecentAccess &&
@@ -599,7 +599,7 @@ class _MainShellState extends ConsumerState<MainShell>
     if (_mornyeSettingsTab && index == _settingsIndex(showStore)) {
       return ShellTab.settings;
     }
-    return context.isMornye ? ShellTab.search : ShellTab.settings;
+    return ShellTab.settings;
   }
 
   List<DesktopDestination> _desktopDestinations({
@@ -617,19 +617,19 @@ class _MainShellState extends ConsumerState<MainShell>
         switch (tab) {
           ShellTab.home => DesktopDestination(
             tab: tab,
-            icon: mornye ? CupertinoIcons.house : Icons.home_outlined,
-            selectedIcon: mornye ? CupertinoIcons.house_fill : Icons.home,
-            label: l10n.navHome,
+            icon: mornye ? CupertinoIcons.today : Icons.today_outlined,
+            selectedIcon: mornye ? CupertinoIcons.today : Icons.today,
+            label: 'Today',
           ),
           ShellTab.library => DesktopDestination(
             tab: tab,
             icon: mornye
-                ? CupertinoIcons.square_stack
-                : Icons.library_music_outlined,
+                ? CupertinoIcons.calendar
+                : Icons.calendar_month_outlined,
             selectedIcon: mornye
-                ? CupertinoIcons.square_stack_fill
-                : Icons.library_music,
-            label: l10n.navLibrary,
+                ? CupertinoIcons.calendar
+                : Icons.calendar_month,
+            label: 'Next days',
             badgeCount: queueCount,
           ),
           ShellTab.repository => DesktopDestination(
@@ -808,9 +808,6 @@ class _MainShellState extends ConsumerState<MainShell>
     if (index == 0) return _homeTabNavigatorKey.currentState;
     if (index == 1) return _libraryTabNavigatorKey.currentState;
     if (showStore && index == 2) return _repoTabNavigatorKey.currentState;
-    if (context.isMornye && index == (showStore ? 3 : 2)) {
-      return _searchTabNavigatorKey.currentState;
-    }
     return null;
   }
 
@@ -823,7 +820,7 @@ class _MainShellState extends ConsumerState<MainShell>
     ShellNavigationService.syncState(
       currentTabIndex: _currentIndex,
       showRepoTab: showStore,
-      showSearchTab: context.isMornye,
+      showSearchTab: false,
     );
 
     final tabs = <Widget>[
@@ -832,7 +829,7 @@ class _MainShellState extends ConsumerState<MainShell>
         navigatorKey: _homeTabNavigatorKey,
         observers: [_homePreviewStopObserver],
         heroAnimationsEnabled: heroAnimationsEnabled,
-        child: const EmptyContent(title: "Home"),
+        child: const TodayPlanTab(),
       ),
       _TabNavigator(
         key: const ValueKey('tab-library'),
@@ -842,7 +839,7 @@ class _MainShellState extends ConsumerState<MainShell>
           if (isDesktopPlatform) _libraryDepthObserver,
         ],
         heroAnimationsEnabled: heroAnimationsEnabled,
-        child: const EmptyContent(title: "Library"),
+        child: const NextDaysTab(),
       ),
       if (showStore)
         _TabNavigator(
@@ -852,16 +849,9 @@ class _MainShellState extends ConsumerState<MainShell>
           heroAnimationsEnabled: heroAnimationsEnabled,
           child: const EmptyContent(title: "Store"),
         ),
-      if (!context.isMornye) const SettingsTab(),
-      if (context.isMornye)
-        _TabNavigator(
-          key: const ValueKey('tab-search'),
-          navigatorKey: _searchTabNavigatorKey,
-          observers: [_searchPreviewStopObserver],
-          heroAnimationsEnabled: heroAnimationsEnabled,
-          child: const EmptyContent(title: "Search"),
-        ),
-      if (_mornyeSettingsTab) const SettingsTab(key: ValueKey('tab-settings')),
+      if (!context.isMornye) const YoetiSettingsTab(),
+      if (_mornyeSettingsTab)
+        const YoetiSettingsTab(key: ValueKey('tab-settings')),
     ];
 
     final maxIndex = tabs.length - 1;
@@ -1023,87 +1013,41 @@ class _MainShellState extends ConsumerState<MainShell>
     required int queuedCount,
     required int repoUpdatesCount,
     required bool showStore,
-  }) {
-    final l10n = context.l10n;
-    return <NavigationDestination>[
-      NavigationDestination(
-        icon: AppIcon(
-          context.isMornye ? CupertinoIcons.house_fill : Icons.home_outlined,
-        ),
-        selectedIcon: BouncingIcon(child: const AppIcon(Icons.home)),
-        label: l10n.navHome,
+  }) => [
+    NavigationDestination(
+      icon: AppIcon(
+        context.isMornye ? CupertinoIcons.today : Icons.today_outlined,
       ),
-      NavigationDestination(
-        icon: context.isMornye
-            ? MornyeNavigationIcon(
-                icon: CupertinoIcons.square_stack_fill,
-                badgeCount: queuedCount,
-              )
-            : AnimatedBadge(
-                count: queuedCount,
-                child: Badge(
-                  isLabelVisible: queuedCount > 0,
-                  label: Text('$queuedCount'),
-                  child: const AppIcon(Icons.library_music_outlined),
-                ),
-              ),
-        selectedIcon: SlidingIcon(
-          child: AnimatedBadge(
-            count: queuedCount,
-            child: Badge(
-              isLabelVisible: queuedCount > 0,
-              label: Text('$queuedCount'),
-              child: const AppIcon(Icons.library_music),
-            ),
-          ),
-        ),
-        label: l10n.navLibrary,
+      selectedIcon: BouncingIcon(
+        child: AppIcon(context.isMornye ? CupertinoIcons.today : Icons.today),
       ),
-      if (showStore)
-        NavigationDestination(
-          icon: context.isMornye
-              ? MornyeNavigationIcon(
-                  icon: CupertinoIcons.square_grid_2x2,
-                  badgeCount: repoUpdatesCount,
-                )
-              : AnimatedBadge(
-                  count: repoUpdatesCount,
-                  child: Badge(
-                    isLabelVisible: repoUpdatesCount > 0,
-                    label: Text('$repoUpdatesCount'),
-                    child: const AppIcon(Icons.extension_outlined),
-                  ),
-                ),
-          selectedIcon: BouncingIcon(
-            child: AnimatedBadge(
-              count: repoUpdatesCount,
-              child: Badge(
-                isLabelVisible: repoUpdatesCount > 0,
-                label: Text('$repoUpdatesCount'),
-                child: const AppIcon(Icons.extension),
-              ),
-            ),
-          ),
-          label: l10n.navStore,
+      label: 'Today',
+    ),
+    NavigationDestination(
+      icon: AppIcon(
+        context.isMornye
+            ? CupertinoIcons.calendar
+            : Icons.calendar_month_outlined,
+      ),
+      selectedIcon: BouncingIcon(
+        child: AppIcon(
+          context.isMornye ? CupertinoIcons.calendar : Icons.calendar_month,
         ),
-      if (!context.isMornye)
-        NavigationDestination(
-          icon: const AppIcon(Icons.settings_outlined),
-          selectedIcon: SpinIcon(child: const AppIcon(Icons.settings)),
-          label: l10n.navSettings,
+      ),
+      label: 'Next days',
+    ),
+    NavigationDestination(
+      icon: AppIcon(
+        context.isMornye ? CupertinoIcons.gear_alt : Icons.settings_outlined,
+      ),
+      selectedIcon: BouncingIcon(
+        child: AppIcon(
+          context.isMornye ? CupertinoIcons.gear_alt_fill : Icons.settings,
         ),
-      if (context.isMornye)
-        NavigationDestination(
-          icon: const Icon(CupertinoIcons.search),
-          label: l10n.mornyeSearch,
-        ),
-      if (context.isMornye)
-        NavigationDestination(
-          icon: const Icon(CupertinoIcons.gear_alt),
-          label: l10n.navSettings,
-        ),
-    ];
-  }
+      ),
+      label: context.l10n.navSettings,
+    ),
+  ];
 
   /// The phone and tablet chrome around [pageView]: the bottom bar, or the
   /// rail in wide windows, and the mini player.
@@ -1215,11 +1159,11 @@ class _MainShellState extends ConsumerState<MainShell>
                                   collapsed &&
                                   MediaQuery.viewInsetsOf(context).bottom == 0,
                               destinations: destinations,
-                              searchIndex: destinations.length - 2,
+                              searchIndex: destinations.length - 1,
                               selectedIndex: selectedDestination,
                               onSelected: _onNavTap,
                               onHome: () => _onNavTap(0),
-                              onSearch: ShellNavigationService.requestSearch,
+                              onSearch: () => _onNavTap(2),
                               blurEnabled: ref.watch(mornyeBlurEnabledProvider),
                             ),
                           ),
